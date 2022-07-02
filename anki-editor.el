@@ -147,9 +147,10 @@ See https://apps.ankiweb.net/docs/manual.html#latex-conflicts.")
         (json-array-type 'list)
         reply err)
 
-    (let ((response (request (format "http://%s:%s"
-                                     anki-editor-anki-connect-listening-address
-                                     anki-editor-anki-connect-listening-port)
+    (let* ((url (format "http://%s:%s"
+                        anki-editor-anki-connect-listening-address
+                        anki-editor-anki-connect-listening-port))
+           (response (request url
                              :type "POST"
                              :parser 'json-read
                              :data request-body
@@ -164,7 +165,15 @@ See https://apps.ankiweb.net/docs/manual.html#latex-conflicts.")
       ;; might not be called right away but at a later time, that's
       ;; why here we manually invoke callbacks to receive the result.
       (unless (request-response-done-p response)
-        (request--curl-callback (get-buffer-process (request-response--buffer response)) "finished\n")))
+        ;; (request--curl-callback "localhost" (get-buffer-process (request-response--buffer response)) "finished\n")))
+        (if (= 2 (func-arity (function 'request--curl-callback)))
+            ;; Handle the older, stable version of 'request.el' in which
+            ;; `request--curl-callback' has two args.
+            (request--curl-callback (get-buffer-process (request-response--buffer response)) "finished\n")
+          ;; Handle new 3-argument function signature as of 'request.el' commit
+          ;; '8ccbae1b5e5e2ae68112dd46a6bee67d318b0deb'. Should fix anki-editor
+          ;; errors for those using newer versions of 'request.el'.
+          (request--curl-callback url (get-buffer-process (request-response--buffer response)) "finished\n"))))
 
     (when err (error "Error communicating with AnkiConnect using cURL: %s" err))
     (or reply (error "Got empty reply from AnkiConnect"))))
