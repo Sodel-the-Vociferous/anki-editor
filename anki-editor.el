@@ -166,7 +166,7 @@ See https://apps.ankiweb.net/docs/manual.html#latex-conflicts.")
       ;; why here we manually invoke callbacks to receive the result.
       (unless (request-response-done-p response)
         ;; (request--curl-callback "localhost" (get-buffer-process (request-response--buffer response)) "finished\n")))
-        (if (= 2 (func-arity (function 'request--curl-callback)))
+        (if (equalp '(2 . 2) (func-arity 'request--curl-callback))
             ;; Handle the older, stable version of 'request.el' in which
             ;; `request--curl-callback' has two args.
             (request--curl-callback (get-buffer-process (request-response--buffer response)) "finished\n")
